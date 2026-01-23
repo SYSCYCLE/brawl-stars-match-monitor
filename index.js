@@ -14,7 +14,10 @@ http.createServer((req, res) => { res.end('OK'); }).listen(process.env.PORT || 3
 let lastBattleTime = null;
 
 async function check() {
-  if (!BS_TOKEN || BS_TOKEN === 'gecici') return;
+  if (!BS_TOKEN || BS_TOKEN === 'gecici') {
+    console.log("Hata: Değişkenler Railway'e girilmemiş!");
+    return;
+  }
 
   try {
     const res = await axios.get(API_URL, {
@@ -23,31 +26,29 @@ async function check() {
         'Accept': 'application/json'
       }
     });
-
-    const items = res.data.items;
-    if (!items || items.length === 0) return;
-
+    console.log("--- BAĞLANTI BAŞARILI! MAÇLAR İZLENİYOR ---");
+    
     if (lastBattleTime === null) {
-      lastBattleTime = items[0].battleTime;
-      console.log("BAĞLANTI BAŞARILI! Maçlar izleniyor...");
+      lastBattleTime = res.data.items[0].battleTime;
       return;
     }
 
-    if (items[0].battleTime !== lastBattleTime) {
-      const b = items[0].battle;
-      const emoji = b.result === 'victory' ? "🏆" : "❌";
-      const text = `<b>${emoji} MAÇ BİTTİ!</b>\nKupa: ${b.trophyChange || 0}`;
-      
+    if (res.data.items[0].battleTime !== lastBattleTime) {
       await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-        chat_id: TG_CHAT_ID, text: text, parse_mode: 'HTML'
+        chat_id: TG_CHAT_ID,
+        text: "🏆 Maç Bitti! Sonuçlar Telegram'a yollandı.",
+        parse_mode: 'HTML'
       });
-      lastBattleTime = items[0].battleTime;
+      lastBattleTime = res.data.items[0].battleTime;
     }
   } catch (err) {
-    if (err.response) {
-      console.log(`Hata: ${err.response.status} - Token veya IP reddedildi.`);
+    if (err.response && err.response.status === 403) {
+      const ipCheck = await axios.get('https://api.ipify.org?format=json');
+      console.log(`!!! 403 HATASI !!!`);
+      console.log(`1. Şu IP'yi Portal'a ekle: ${ipCheck.data.ip}`);
+      console.log(`2. Token'ın sonu şununla mı bitiyor: ...${BS_TOKEN.substring(BS_TOKEN.length - 10)}`);
     } else {
-      console.log("Bağlantı hatası: " + err.message);
+      console.log("Hata: " + err.message);
     }
   }
 }
