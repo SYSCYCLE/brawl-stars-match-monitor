@@ -144,3 +144,18 @@ ${starPlayerText}`;
 
 setInterval(checkBattles, 5000);
 checkBattles();
+
+async function logCurrentIP() {
+    try {
+        const res = await axios.get('https://api.ipify.org?format=json');
+        console.log("-----------------------------------------");
+        console.log("RENDER ANLIK IP ADRESİNİZ:", res.data.ip);
+        console.log("Bu IP'yi Brawl Stars Developer Portal'a ekleyin.");
+        console.log("-----------------------------------------");
+    } catch (err) {
+        console.error("IP Adresi alınamadı.");
+    }
+}
+logCurrentIP();
+
+const LOG_FILE = path.join(__dirname, 'processed_matches.log');
